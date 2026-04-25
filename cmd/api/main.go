@@ -1,19 +1,27 @@
 package main
 
-import "log"
+import (
+	"log"
+
+	"github.com/joho/godotenv"
+	"github.com/zavista/social-api/internal/env"
+)
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	cfg := config{
-		addr: ":8080",
+		addr: env.GetString("ADDR", ":8080"),
 	}
 
 	app := &application{
 		config: cfg,
 	}
 
-	err := app.run()
-	if err != nil {
-		log.Fatal(app.run())
+	if err := app.run(); err != nil {
+		log.Fatal(err)
 	}
 
 }
