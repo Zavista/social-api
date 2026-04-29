@@ -5,6 +5,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/zavista/social-api/internal/env"
+	"github.com/zavista/social-api/internal/store"
 )
 
 func main() {
@@ -16,8 +17,11 @@ func main() {
 		addr: env.GetString("ADDR", ":8080"),
 	}
 
+	store := store.NewPostgresStorage(nil)
+
 	app := &application{
 		config: cfg,
+		store:  store,
 	}
 
 	if err := app.run(); err != nil {
