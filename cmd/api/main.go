@@ -47,5 +47,4 @@ func main() {
 	if err := app.run(); err != nil {
 		log.Fatal(err)
 	}
-
 }

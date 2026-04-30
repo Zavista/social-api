@@ -41,7 +41,6 @@ func (app *application) mount() http.Handler {
 }
 
 func (app *application) run() error {
-
 	srv := http.Server{
 		Addr:              app.config.addr,
 		Handler:           app.mount(),
