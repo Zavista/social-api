@@ -9,6 +9,8 @@ import (
 	"github.com/zavista/social-api/internal/store"
 )
 
+const version = "0.0.1"
+
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
@@ -16,6 +18,7 @@ func main() {
 
 	cfg := config{
 		addr: env.GetString("ADDR", ":8080"),
+		env:  env.GetString("ENV", "development"),
 		db: dbConfig{
 			addr:         env.GetString("DB_ADDR", "postgres://admin:adminpassword@localhost/socialnetwork?sslmode=disable"),
 			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 30),
