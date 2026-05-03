@@ -14,6 +14,7 @@ type PostRepository interface {
 	Create(context.Context, *Post) error
 	GetByID(context.Context, int64) (*Post, error)
 	Delete(context.Context, int64) error
+	Update(context.Context, *Post) error
 }
 
 type UserRepository interface {
