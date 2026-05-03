@@ -19,14 +19,21 @@ type UserRepository interface {
 	Create(context.Context, *User) error
 }
 
+type CommentRepository interface {
+	Create(context.Context, *Comment) error
+	GetByPostID(context.Context, int64) ([]Comment, error)
+}
+
 type Storage struct {
-	Posts PostRepository
-	Users UserRepository
+	Posts    PostRepository
+	Users    UserRepository
+	Comments CommentRepository
 }
 
 func NewPostgresStorage(db *sql.DB) Storage {
 	return Storage{
-		Posts: &PostStore{db},
-		Users: &UserStore{db},
+		Posts:    &PostStore{db},
+		Users:    &UserStore{db},
+		Comments: &CommentStore{db},
 	}
 }
