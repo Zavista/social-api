@@ -29,16 +29,23 @@ type CommentRepository interface {
 	GetByPostID(context.Context, int64) ([]Comment, error)
 }
 
+type FollowerRepository interface {
+	Follow(ctx context.Context, followedID, followerID int64) error
+	Unfollow(ctx context.Context, followedID, followerID int64) error
+}
+
 type Storage struct {
-	Posts    PostRepository
-	Users    UserRepository
-	Comments CommentRepository
+	Posts     PostRepository
+	Users     UserRepository
+	Comments  CommentRepository
+	Followers FollowerRepository
 }
 
 func NewPostgresStorage(db *sql.DB) Storage {
 	return Storage{
-		Posts:    &PostStore{db},
-		Users:    &UserStore{db},
-		Comments: &CommentStore{db},
+		Posts:     &PostStore{db},
+		Users:     &UserStore{db},
+		Comments:  &CommentStore{db},
+		Followers: &FollowerStore{db},
 	}
 }
