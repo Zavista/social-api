@@ -27,9 +27,8 @@ type PostWithComments struct {
 
 type PostWithMetadata struct {
 	Post
-	Comments      []Comment `json:"comments"`
-	User          User      `json:"user"`
-	CommentsCount int       `json:"comments_count"`
+	User          User `json:"user"`
+	CommentsCount int  `json:"comments_count"`
 }
 
 type PostStore struct {
@@ -158,8 +157,11 @@ func (s *PostStore) GetUserFeed(ctx context.Context, userID int64, fq PaginatedF
 			ON f.user_id = p.user_id 
 			AND f.follower_id = $1
 		WHERE 
-			p.user_id = $1
-			OR f.follower_id = $1
+			(p.user_id = $1 OR f.follower_id = $1) AND
+			(p.title ILIKE '%' || $4 || '%' OR p.content ILIKE '%' || $4 || '%') AND
+			(p.tags @> $5 OR $5 = '{}') AND
+			(p.created_at >= NULLIF($6, '')::timestamp OR $6 = '') AND
+			(p.created_at <= NULLIF($7, '')::timestamp OR $7 = '')
 		GROUP BY p.id, u.username
 		ORDER BY p.created_at ` + fq.Sort + `
 		LIMIT $2 OFFSET $3
@@ -169,14 +171,25 @@ func (s *PostStore) GetUserFeed(ctx context.Context, userID int64, fq PaginatedF
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
 
-	rows, err := s.db.QueryContext(ctx, query, userID, fq.Limit, fq.Offset)
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		userID,
+		fq.Limit,
+		fq.Offset,
+		fq.Search,
+		pq.Array(fq.Tags),
+		fq.Since,
+		fq.Until,
+	)
 	if err != nil {
 		return nil, err
 	}
 
 	defer rows.Close()
 
-	var feed []PostWithMetadata
+	feed := []PostWithMetadata{}
+
 	for rows.Next() {
 		var p PostWithMetadata
 		err := rows.Scan(
