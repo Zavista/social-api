@@ -1,12 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
+	"github.com/zavista/social-api/docs"
 	"github.com/zavista/social-api/internal/store"
 )
 
@@ -15,9 +18,10 @@ type application struct {
 	store  store.Storage
 }
 type config struct {
-	addr string
-	env  string
-	db   dbConfig
+	addr   string
+	env    string
+	db     dbConfig
+	apiURL string
 }
 
 type dbConfig struct {
@@ -36,8 +40,11 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	r.Route("/v1", func(r chi.Router) {
-		r.Get("/healthz", app.healthCheckHandler)
 
+		docsURL := fmt.Sprintf("%s/swagger/doc.json", app.config.addr)
+		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))
+
+		r.Get("/health", app.healthCheckHandler)
 		r.Route("/posts", func(r chi.Router) {
 			r.Post("/", app.createPostHandler)
 
@@ -67,6 +74,11 @@ func (app *application) mount() http.Handler {
 }
 
 func (app *application) run() error {
+
+	docs.SwaggerInfo.Version = version
+	docs.SwaggerInfo.Host = app.config.apiURL
+	docs.SwaggerInfo.BasePath = "/v1"
+
 	srv := http.Server{
 		Addr:              app.config.addr,
 		Handler:           app.mount(),

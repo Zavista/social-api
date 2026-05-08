@@ -68,8 +68,9 @@ with key architectural decisions outlined below.
 ### Pagination & Filtering
 
 - Offset/limit pagination
-- Search via `ILIKE`
+- Text search via `ILIKE`
 - Tag filtering with GIN indexes
+- Supports query filtering (e.g. /feed?limit=10&offset=20&search=golang&tags=backend,cloud)
 
 ---
 
@@ -79,6 +80,10 @@ with key architectural decisions outlined below.
 - Prevents hanging queries and improves reliability
 
 ---
+
+### Swagger Docs
+
+- `http://<API-URL>/v1/swagger/index.html`
 
 ## Planned Improvements
 
