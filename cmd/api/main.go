@@ -1,7 +1,8 @@
 package main
 
 import (
-	"log"
+	"log/slog"
+	"os"
 
 	"github.com/joho/godotenv"
 	"github.com/zavista/social-api/internal/db"
@@ -23,8 +24,14 @@ const version = "0.0.1"
 // @name						Authorization
 // @description
 func main() {
+	// Logger
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+		logger.Error("Error loading .env file",
+			"error", err.Error())
 	}
 
 	cfg := config{
@@ -39,6 +46,7 @@ func main() {
 		},
 	}
 
+	// Main Database
 	db, err := db.New(
 		cfg.db.addr,
 		cfg.db.maxIdleConns,
@@ -46,20 +54,26 @@ func main() {
 		cfg.db.maxIdleTime,
 	)
 	if err != nil {
-		log.Panic(err)
+		logger.Error("failed to start database",
+			"error", err.Error(),
+		)
 	}
-
 	defer db.Close()
-	log.Println("database connection pool established")
+
+	logger.Info("database connection pool established")
 
 	store := store.NewPostgresStorage(db)
 
 	app := &application{
 		config: cfg,
 		store:  store,
+		logger: logger,
 	}
 
 	if err := app.run(); err != nil {
-		log.Fatal(err)
+		app.logger.Error("failed to start server",
+			"error", err.Error(),
+		)
 	}
+
 }

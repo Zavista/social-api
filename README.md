@@ -83,7 +83,14 @@ with key architectural decisions outlined below.
 
 ### Swagger Docs
 
-- `http://<API-URL>/v1/swagger/index.html`
+- Interactive API docs available at `http://<API-URL>/v1/swagger/index.html`
+
+---
+
+### Structured Logging
+
+- Logs are emitted in structured key-value format using Go’s standard `slog` package
+- Improves debugging and makes logs easier to search/filter in production
 
 ## Planned Improvements
 

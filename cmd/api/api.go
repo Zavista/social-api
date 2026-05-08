@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -16,6 +16,7 @@ import (
 type application struct {
 	config config
 	store  store.Storage
+	logger *slog.Logger
 }
 type config struct {
 	addr   string
@@ -79,6 +80,11 @@ func (app *application) run() error {
 	docs.SwaggerInfo.Host = app.config.apiURL
 	docs.SwaggerInfo.BasePath = "/v1"
 
+	app.logger.Info("starting server",
+		"addr", app.config.addr,
+		"env", app.config.env,
+	)
+
 	srv := http.Server{
 		Addr:              app.config.addr,
 		Handler:           app.mount(),
@@ -87,7 +93,6 @@ func (app *application) run() error {
 		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}
-	log.Printf("server has started at %s", app.config.addr)
 
 	return srv.ListenAndServe()
 }

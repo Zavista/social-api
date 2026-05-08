@@ -13,6 +13,7 @@ func main() {
 	conn, err := db.New(addr, 3, 3, "15m")
 	if err != nil {
 		log.Fatal(err)
+
 	}
 
 	defer conn.Close()
