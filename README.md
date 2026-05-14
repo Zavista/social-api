@@ -92,6 +92,14 @@ with key architectural decisions outlined below.
 - Logs are emitted in structured key-value format using Go’s standard `slog` package
 - Improves debugging and makes logs easier to search/filter in production
 
+---
+
+### Registration Flow
+
+- Creates a user account and a matching `user_invitations` record
+- Sends an activation invite by email
+- Uses a database transaction so user creation and invitation creation succeed or fail together
+
 ## Planned Improvements
 
 - Authentication / Authorization
