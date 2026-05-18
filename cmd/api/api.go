@@ -23,6 +23,11 @@ type config struct {
 	env    string
 	db     dbConfig
 	apiURL string
+	mail   mailConfig
+}
+
+type mailConfig struct {
+	exp time.Duration
 }
 
 type dbConfig struct {

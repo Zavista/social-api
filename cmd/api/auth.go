@@ -1,8 +1,11 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/zavista/social-api/internal/store"
 )
 
@@ -50,9 +53,23 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 	ctx := r.Context()
 
-	token := "uuid" // TODO: replace with uuidv4
-	if err := app.store.Users.CreateAndInvite(ctx, user, token); err != nil {
-		app.internalServerError(w, r, err)
+	plainToken := uuid.New().String()
+
+	// Activation tokens are randomly generated, so a fast SHA256 hash is sufficient for secure storage.
+	hash := sha256.Sum256([]byte(plainToken))
+	hashToken := hex.EncodeToString(hash[:])
+
+	err := app.store.Users.CreateAndInvite(ctx, user, hashToken, app.config.mail.exp)
+
+	if err != nil {
+		switch err {
+		case store.ErrDuplicateEmail:
+			app.badRequestResponse(w, r, err)
+		case store.ErrDuplicateUsername:
+			app.badRequestResponse(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
 		return
 	}
 
