@@ -73,6 +73,8 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// TODO: remove once we have email token activation
+	app.logger.Info("activation token", "plainToken", plainToken)
 	if err := app.jsonResponse(w, http.StatusCreated, user); err != nil {
 		app.internalServerError(w, r, err)
 		return

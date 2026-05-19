@@ -47,6 +47,7 @@ type UserRepository interface {
 	GetByID(context.Context, int64) (*User, error)
 	Create(context.Context, *User) error
 	CreateAndInvite(context.Context, *User, string, time.Duration) error
+	Activate(context.Context, string) error
 }
 
 type CommentRepository interface {
