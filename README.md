@@ -97,8 +97,8 @@ with key architectural decisions outlined below.
 ### Registration Flow
 
 - Creates a user account and a matching `user_invitations` record
-- Sends an activation invite by email
 - Uses a database transaction so user creation and invitation creation succeed or fail together
+- Sends an activation invite by email via Sendgrid
 
 ## Planned Improvements
 

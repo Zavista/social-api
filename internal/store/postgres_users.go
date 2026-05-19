@@ -118,6 +118,19 @@ func (s *UserStore) Activate(ctx context.Context, token string) error {
 	})
 }
 
+func (s *UserStore) Delete(ctx context.Context, userID int64) error {
+	query := `DELETE from users WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	_, err := s.db.ExecContext(ctx, query, userID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // create contains the shared insert logic for user creation.
 //
 // The db parameter accepts either:

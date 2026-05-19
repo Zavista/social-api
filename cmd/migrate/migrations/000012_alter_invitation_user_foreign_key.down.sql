@@ -1,0 +1,2 @@
+ALTER TABLE user_invitations
+DROP CONSTRAINT IF EXISTS user_invitations_user_id_fkey;

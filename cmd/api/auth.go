@@ -3,9 +3,11 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/zavista/social-api/internal/mailer"
 	"github.com/zavista/social-api/internal/store"
 )
 
@@ -13,6 +15,11 @@ type RegisterUserPayload struct {
 	Username string `json:"username" validate:"required,max=100"`
 	Email    string `json:"email" validate:"required,email,max=255"`
 	Password string `json:"password" validate:"required,min=3,max=72"`
+}
+
+type UserWithToken struct {
+	*store.User
+	Token string `json:"token"`
 }
 
 // registerUserHandler godoc
@@ -73,9 +80,40 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// TODO: remove once we have email token activation
-	app.logger.Info("activation token", "plainToken", plainToken)
-	if err := app.jsonResponse(w, http.StatusCreated, user); err != nil {
+	activationURL := fmt.Sprintf("%s/confirm/%s", app.config.frontendURL, plainToken)
+	isProdEnv := true // app.config.env == "production"
+	vars := struct {
+		Username      string
+		ActivationURL string
+	}{
+		Username:      user.Username,
+		ActivationURL: activationURL,
+	}
+
+	// TODO: For future scalability, do this asynchronously rather than synchronously in the code
+	// via a Pub Sub system like Kafka, or AWS SQS, etc... in a different service
+	status, err := app.mailer.Send(mailer.UserWelcomeTemplate, user.Username, user.Email, vars, !isProdEnv)
+
+	if err != nil {
+		app.logger.Error("error sending welcome email", "error", err)
+
+		// rollback user creation if email fails
+		if err := app.store.Users.Delete(ctx, user.ID); err != nil {
+			app.logger.Error("error deleting user", "error", err)
+		}
+
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	app.logger.Info("Email sent", "status code", status)
+
+	userWithToken := UserWithToken{
+		User:  user,
+		Token: plainToken,
+	}
+
+	if err := app.jsonResponse(w, http.StatusCreated, userWithToken); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

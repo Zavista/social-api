@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 	"github.com/zavista/social-api/docs"
+	"github.com/zavista/social-api/internal/mailer"
 	"github.com/zavista/social-api/internal/store"
 )
 
@@ -17,17 +18,25 @@ type application struct {
 	config config
 	store  store.Storage
 	logger *slog.Logger
+	mailer mailer.Client
 }
 type config struct {
-	addr   string
-	env    string
-	db     dbConfig
-	apiURL string
-	mail   mailConfig
+	addr        string
+	env         string
+	db          dbConfig
+	apiURL      string
+	mail        mailConfig
+	frontendURL string
 }
 
 type mailConfig struct {
-	exp time.Duration
+	sendGrid  sendGridConfig
+	exp       time.Duration
+	fromEmail string
+}
+
+type sendGridConfig struct {
+	apiKey string
 }
 
 type dbConfig struct {
