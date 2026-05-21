@@ -11,6 +11,9 @@ import (
 //	@Tags			ops
 //	@Produce		json
 //	@Success		200	{object}	string	"ok"
+//
+//	@Security		BasicAuth
+//
 //	@Router			/health [get]
 func (app *application) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	data := map[string]string{

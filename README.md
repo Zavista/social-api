@@ -100,9 +100,16 @@ with key architectural decisions outlined below.
 - Uses a database transaction so user creation and invitation creation succeed or fail together
 - Sends an activation invite by email via Sendgrid
 
+### Authentication
+
+- Uses stateless JWT-based authentication for protected API routes
+- Access tokens are verified on each request, eliminating server-side session storage and improving horizontal
+  scalability for distributed services
+- Operational endpoints such as metrics use HTTP Basic Authentication for lightweight internal protection
+
 ## Planned Improvements
 
-- Authentication / Authorization
+- Authorization
 - Redis caching (feed, hot data)
 - Metrics & observability
 - Rate limiting

@@ -170,6 +170,8 @@ paths:
           description: ok
           schema:
             type: string
+      security:
+      - BasicAuth: []
       summary: Healthcheck
       tags:
       - ops
@@ -509,7 +511,10 @@ paths:
       - feed
 securityDefinitions:
   ApiKeyAuth:
+    description: JWT Bearer token authentication
     in: header
     name: Authorization
     type: apiKey
+  BasicAuth:
+    type: basic
 swagger: "2.0"
