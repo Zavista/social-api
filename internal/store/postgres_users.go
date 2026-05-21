@@ -24,6 +24,12 @@ type User struct {
 	Password  password  `json:"-"`
 	CreatedAt time.Time `json:"created_at"`
 	IsActive  bool      `json:"is_active"`
+	RoleID    int64     `json:"role_id"`
+}
+
+type UserWithRole struct {
+	User
+	Role Role `json:"role"`
 }
 
 type password struct {
@@ -56,7 +62,7 @@ func (s *UserStore) Create(ctx context.Context, user *User) error {
 
 func (s *UserStore) GetByID(ctx context.Context, userID int64) (*User, error) {
 	query := `
-		SELECT id, username, email, password, created_at
+		SELECT id, username, email, password, created_at, role_id
 		FROM users
 		WHERE id = $1 AND is_active = true
 	`
@@ -72,6 +78,7 @@ func (s *UserStore) GetByID(ctx context.Context, userID int64) (*User, error) {
 		&user.Email,
 		&user.Password.hash,
 		&user.CreatedAt,
+		&user.RoleID,
 	)
 	if err != nil {
 		switch {
@@ -85,9 +92,48 @@ func (s *UserStore) GetByID(ctx context.Context, userID int64) (*User, error) {
 	return &user, nil
 }
 
+func (s *UserStore) GetByIDWithRole(ctx context.Context, userID int64) (*UserWithRole, error) {
+	query := `
+		SELECT 
+			u.id, u.username, u.email, u.password, u.created_at, u.is_active, u.role_id,
+			r.id, r.name, r.description, r.level
+		FROM users u
+		JOIN roles r ON u.role_id = r.id
+		WHERE u.id = $1 AND u.is_active = true
+	`
+
+	var user UserWithRole
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	err := s.db.QueryRowContext(ctx, query, userID).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.Password.hash,
+		&user.CreatedAt,
+		&user.IsActive,
+		&user.RoleID,
+
+		&user.Role.ID,
+		&user.Role.Name,
+		&user.Role.Description,
+		&user.Role.Level,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 func (s *UserStore) GetByEmail(ctx context.Context, email string) (*User, error) {
 	query := `
-		SELECT id, username, email, password, created_at
+		SELECT id, username, email, password, created_at, role_id
 		FROM users
 		WHERE email = $1 AND is_active = true
 	`
@@ -103,6 +149,7 @@ func (s *UserStore) GetByEmail(ctx context.Context, email string) (*User, error)
 		&user.Email,
 		&user.Password.hash,
 		&user.CreatedAt,
+		&user.RoleID,
 	)
 	if err != nil {
 		switch {
@@ -175,7 +222,7 @@ func (s *UserStore) Delete(ctx context.Context, userID int64) error {
 // This allows higher-level operations like CreateAndInvite to reuse
 // the same query logic within a transaction.
 func (s *UserStore) create(ctx context.Context, dbtx DBTX, user *User) error {
-	query := `INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, created_at`
+	query := `INSERT INTO users (username, email, password, role_id) VALUES ($1, $2, $3, $4) RETURNING id, created_at`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
@@ -185,7 +232,8 @@ func (s *UserStore) create(ctx context.Context, dbtx DBTX, user *User) error {
 		query,
 		user.Username,
 		user.Email,
-		user.Password.hash).Scan(&user.ID, &user.CreatedAt)
+		user.Password.hash,
+		user.RoleID).Scan(&user.ID, &user.CreatedAt)
 	if err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {

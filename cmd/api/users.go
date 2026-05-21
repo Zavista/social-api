@@ -8,7 +8,7 @@ import (
 	"github.com/zavista/social-api/internal/store"
 )
 
-const userCtxKey contextKey = "post"
+const userCtxKey contextKey = "user"
 
 // GetUser godoc
 //
@@ -129,7 +129,7 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func getUserFromCtx(r *http.Request) *store.User {
-	user, _ := r.Context().Value(userCtxKey).(*store.User)
+func getUserFromCtx(r *http.Request) *store.UserWithRole {
+	user, _ := r.Context().Value(userCtxKey).(*store.UserWithRole)
 	return user
 }

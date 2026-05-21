@@ -107,6 +107,14 @@ with key architectural decisions outlined below.
   scalability for distributed services
 - Operational endpoints such as metrics use HTTP Basic Authentication for lightweight internal protection
 
+### Authorization
+
+- Role-based access control (RBAC) with users, moderators, and admins
+  - Users can modify their own posts
+  - Moderators can update any post
+  - Admins can update and delete any post
+- Ownership-based permissions enforced for post updates/deletes
+
 ## Planned Improvements
 
 - Authorization

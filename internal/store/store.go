@@ -45,6 +45,7 @@ type PostRepository interface {
 
 type UserRepository interface {
 	GetByID(context.Context, int64) (*User, error)
+	GetByIDWithRole(context.Context, int64) (*UserWithRole, error)
 	GetByEmail(context.Context, string) (*User, error)
 	Create(context.Context, *User) error
 	CreateAndInvite(context.Context, *User, string, time.Duration) error
@@ -62,11 +63,16 @@ type FollowerRepository interface {
 	Unfollow(ctx context.Context, followedID, followerID int64) error
 }
 
+type RolesRepository interface {
+	GetByName(context.Context, string) (*Role, error)
+}
+
 type Storage struct {
 	Posts     PostRepository
 	Users     UserRepository
 	Comments  CommentRepository
 	Followers FollowerRepository
+	Roles     RolesRepository
 }
 
 func NewPostgresStorage(db *sql.DB) Storage {
@@ -75,6 +81,7 @@ func NewPostgresStorage(db *sql.DB) Storage {
 		Users:     &UserStore{db},
 		Comments:  &CommentStore{db},
 		Followers: &FollowerStore{db},
+		Roles:     &RoleStore{db},
 	}
 }
 
