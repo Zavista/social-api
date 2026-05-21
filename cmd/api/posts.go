@@ -46,14 +46,13 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	userId := 1 // Temporary id for development
+	user := getUserFromCtx(r)
 
 	post := &store.Post{
 		Title:   payload.Title,
 		Content: payload.Content,
 		Tags:    payload.Tags,
-		// TODO: change after auth
-		UserID: int64(userId),
+		UserID:  user.ID,
 	}
 
 	ctx := r.Context()
@@ -235,12 +234,11 @@ func (app *application) createCommentHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// TODO: update once authenticaiton is done
-	userID := int64(1)
+	user := getUserFromCtx(r)
 
 	comment := &store.Comment{
 		PostID:  post.ID,
-		UserID:  userID,
+		UserID:  user.ID,
 		Content: payload.Content,
 	}
 

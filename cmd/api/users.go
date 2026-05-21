@@ -54,10 +54,9 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// TODO: Update this for authentication later for auth user from ctx
-	followerUserID := int64(1)
+	followerUser := getUserFromCtx(r)
 
-	if err := app.store.Followers.Follow(r.Context(), followedID, followerUserID); err != nil {
+	if err := app.store.Followers.Follow(r.Context(), followedID, followerUser.ID); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -88,10 +87,9 @@ func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// TODO: Update this for authentication later for auth user from ctx
-	followerUserID := int64(1)
+	followerUser := getUserFromCtx(r)
 
-	if err := app.store.Followers.Unfollow(r.Context(), followedID, followerUserID); err != nil {
+	if err := app.store.Followers.Unfollow(r.Context(), followedID, followerUser.ID); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
