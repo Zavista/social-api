@@ -51,6 +51,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	user := &store.User{
 		Username: payload.Username,
 		Email:    payload.Email,
+		RoleID:   1, // TODO: Update to not hardcode roleID 1 for creating a user
 	}
 
 	if err := user.Password.Set(payload.Password); err != nil {
