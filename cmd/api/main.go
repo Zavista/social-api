@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/zavista/social-api/internal/auth"
 	"github.com/zavista/social-api/internal/db"
 	"github.com/zavista/social-api/internal/env"
 	"github.com/zavista/social-api/internal/mailer"
@@ -62,6 +63,12 @@ func main() {
 				user: env.GetString("AUTH_BASIC_USER", "admin"),
 				pass: env.GetString("AUTH_BASIC_PASS", "admin"),
 			},
+			token: tokenConfig{
+				secret: env.GetString("AUTH_TOKEN_SECRET", "example"),
+				exp:    time.Hour * 24 * 3, // 3 days
+				iss:    "gosocialnetwork",
+				aud:    "gosocialnetwork",
+			},
 		},
 	}
 
@@ -83,12 +90,19 @@ func main() {
 
 	store := store.NewPostgresStorage(db)
 	mailer := mailer.NewSendgrid(cfg.mail.sendGrid.apiKey, cfg.mail.fromEmail)
+	authenticator := auth.NewJWTAuthenticator(
+		cfg.auth.token.secret,
+		cfg.auth.token.iss,
+		cfg.auth.token.aud,
+		cfg.auth.token.exp,
+	)
 
 	app := &application{
-		config: cfg,
-		store:  store,
-		logger: logger,
-		mailer: mailer,
+		config:        cfg,
+		store:         store,
+		logger:        logger,
+		mailer:        mailer,
+		authenticator: authenticator,
 	}
 
 	if err := app.run(); err != nil {

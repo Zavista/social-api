@@ -119,3 +119,61 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 }
+
+type CreateUserTokenPayload struct {
+	Email    string `json:"email" validate:"required,email,max=255"`
+	Password string `json:"password" validate:"required,min=3,max=72"`
+}
+
+// createTokenHandler godoc
+//
+//	@Summary		Creates a token
+//	@Description	Creates a token for a user after checking login credential
+//	@Tags			authentication
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		CreateUserTokenPayload	true	"User credentials"
+//	@Success		200		{string}	string					"Token"
+//	@Failure		400		{object}	error
+//	@Failure		401		{object}	error
+//	@Failure		500		{object}	error
+//	@Router			/authentication/token [post]
+func (app *application) createTokenHandler(w http.ResponseWriter, r *http.Request) {
+	var payload CreateUserTokenPayload
+	if err := readJSON(w, r, &payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if err := Validate.Struct(payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	user, err := app.store.Users.GetByEmail(r.Context(), payload.Email)
+	if err != nil {
+		switch err {
+		case store.ErrNotFound:
+			// Return unauthorized instead of not found error to prevent enumeration attack
+			app.unauthorizedErrorResponse(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
+
+	if err := user.Password.Compare(payload.Password); err != nil {
+		app.unauthorizedErrorResponse(w, r, err)
+		return
+	}
+
+	token, err := app.authenticator.GenerateToken(user.ID)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.jsonResponse(w, http.StatusOK, token); err != nil {
+		app.internalServerError(w, r, err)
+	}
+}

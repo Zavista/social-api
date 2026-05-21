@@ -39,7 +39,6 @@ func (app *application) basicAuthMiddleware(next http.Handler) http.Handler {
 			app.unauthorizedBasicErrorResponse(w, r, fmt.Errorf("invalid credentials"))
 			return
 		}
-		// ctx := context.WithValue(r.Context(), "user", "123")
 
 		app.logger.Info("successfully logged in basic auth")
 		next.ServeHTTP(w, r)

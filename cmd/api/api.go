@@ -10,15 +10,17 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 	"github.com/zavista/social-api/docs"
+	"github.com/zavista/social-api/internal/auth"
 	"github.com/zavista/social-api/internal/mailer"
 	"github.com/zavista/social-api/internal/store"
 )
 
 type application struct {
-	config config
-	store  store.Storage
-	logger *slog.Logger
-	mailer mailer.Client
+	config        config
+	store         store.Storage
+	logger        *slog.Logger
+	mailer        mailer.Client
+	authenticator auth.Authenticator
 }
 type config struct {
 	addr        string
@@ -32,8 +34,15 @@ type config struct {
 
 type authConfig struct {
 	basic basicConfig
+	token tokenConfig
 }
 
+type tokenConfig struct {
+	secret string
+	iss    string
+	aud    string
+	exp    time.Duration
+}
 type basicConfig struct {
 	user string
 	pass string
@@ -99,6 +108,9 @@ func (app *application) mount() http.Handler {
 
 		r.Route("/authentication", func(r chi.Router) {
 			r.Post("/user", app.registerUserHandler)
+
+			// Login endpoint and returns a JWT token
+			r.Post("/token", app.createTokenHandler)
 		})
 	})
 	return r

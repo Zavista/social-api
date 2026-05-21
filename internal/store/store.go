@@ -45,6 +45,7 @@ type PostRepository interface {
 
 type UserRepository interface {
 	GetByID(context.Context, int64) (*User, error)
+	GetByEmail(context.Context, string) (*User, error)
 	Create(context.Context, *User) error
 	CreateAndInvite(context.Context, *User, string, time.Duration) error
 	Activate(context.Context, string) error
