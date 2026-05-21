@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -43,7 +44,38 @@ func (a *JWTAuthenticator) GenerateToken(userID int64) (string, error) {
 	return tokenString, nil
 }
 
-func (a *JWTAuthenticator) ValidateToken(token string) (*Claims, error) {
-	// TODO:
-	return &Claims{}, nil
+func (a *JWTAuthenticator) ValidateToken(tokenString string) (*Claims, error) {
+	jwtToken, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method")
+		}
+
+		return []byte(a.secret), nil
+	},
+		jwt.WithAudience(a.audience),
+		jwt.WithIssuer(a.issuer),
+		jwt.WithExpirationRequired(),
+		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract the JWT claims from the parsed token.
+	claims, ok := jwtToken.Claims.(jwt.MapClaims)
+	if !ok || !jwtToken.Valid {
+		return nil, fmt.Errorf("invalid token")
+	}
+
+	// Extract the user ID from the subject claim.
+	sub, ok := claims["sub"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("invalid subject")
+	}
+
+	return &Claims{
+		UserID: int64(sub),
+	}, nil
 }

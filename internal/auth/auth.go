@@ -7,5 +7,5 @@ type Claims struct {
 
 type Authenticator interface {
 	GenerateToken(userID int64) (string, error)
-	ValidateToken(token string) (*Claims, error)
+	ValidateToken(tokenString string) (*Claims, error)
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -42,5 +43,42 @@ func (app *application) basicAuthMiddleware(next http.Handler) http.Handler {
 
 		app.logger.Info("successfully logged in basic auth")
 		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) authTokenMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			app.unauthorizedErrorResponse(w, r, fmt.Errorf("authorization header is missing"))
+			return
+		}
+
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			app.unauthorizedErrorResponse(w, r, fmt.Errorf("authorized header is malformed"))
+			return
+		}
+
+		token := parts[1]
+
+		claims, err := app.authenticator.ValidateToken(token)
+		if err != nil {
+			app.unauthorizedErrorResponse(w, r, err)
+			return
+		}
+
+		ctx := r.Context()
+		user, err := app.store.Posts.GetByID(ctx, claims.UserID)
+		if err != nil {
+			// Return unauthorized instead of not found error to prevent enumeration attack
+			app.unauthorizedErrorResponse(w, r, err)
+			return
+		}
+
+		ctx = context.WithValue(ctx, userCtxKey, user)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
