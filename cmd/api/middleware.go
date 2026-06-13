@@ -72,12 +72,7 @@ func (app *application) authTokenMiddleware(next http.Handler) http.Handler {
 		}
 
 		ctx := r.Context()
-		user, err := app.store.Users.GetByIDWithRole(ctx, claims.UserID)
-		if err != nil {
-			// Return unauthorized instead of not found error to prevent enumeration attack
-			app.unauthorizedErrorResponse(w, r, err)
-			return
-		}
+		user, err := app.getUser(ctx, claims.UserID)
 
 		ctx = context.WithValue(ctx, userCtxKey, user)
 
@@ -118,4 +113,27 @@ func (app *application) checkRolePrecedence(ctx context.Context, user *store.Use
 	}
 
 	return user.Role.Level >= role.Level, nil
+}
+
+func (app *application) getUser(ctx context.Context, userID int64) (*store.UserWithRole, error) {
+
+	user, err := app.cacheStorage.Users.Get(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// cache miss
+	if user == nil {
+		user, err = app.store.Users.GetByIDWithRole(ctx, userID)
+		if err != nil {
+			return nil, err
+		}
+
+		err = app.cacheStorage.Users.Set(ctx, user)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return user, nil
 }

@@ -9,8 +9,8 @@ import (
 
 type Storage struct {
 	Users interface {
-		Get(context.Context, int64) (*store.User, error)
-		Set(context.Context, *store.User) error
+		Get(context.Context, int64) (*store.UserWithRole, error)
+		Set(context.Context, *store.UserWithRole) error
 		Delete(context.Context, int64)
 	}
 }
