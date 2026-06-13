@@ -13,11 +13,13 @@ import (
 	"github.com/zavista/social-api/internal/auth"
 	"github.com/zavista/social-api/internal/mailer"
 	"github.com/zavista/social-api/internal/store"
+	"github.com/zavista/social-api/internal/store/cache"
 )
 
 type application struct {
 	config        config
 	store         store.Storage
+	cacheStorage  cache.Storage
 	logger        *slog.Logger
 	mailer        mailer.Client
 	authenticator auth.Authenticator
@@ -26,6 +28,7 @@ type config struct {
 	addr        string
 	env         string
 	db          dbConfig
+	redisCfg    redisConfig
 	apiURL      string
 	mail        mailConfig
 	frontendURL string
@@ -63,6 +66,13 @@ type dbConfig struct {
 	maxOpenConns int
 	maxIdleConns int
 	maxIdleTime  string
+}
+
+type redisConfig struct {
+	addr    string
+	pw      string
+	db      int
+	enabled bool
 }
 
 func (app *application) mount() http.Handler {

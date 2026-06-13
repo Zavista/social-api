@@ -4,12 +4,15 @@ go 1.25.5
 
 require (
 	github.com/go-chi/chi/v5 v5.2.5
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.12.3
+	github.com/sendgrid/rest v2.6.9+incompatible
 )
 
 require (
-	github.com/sendgrid/rest v2.6.9+incompatible // indirect
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/swaggo/files/v2 v2.0.0 // indirect
 )
 
