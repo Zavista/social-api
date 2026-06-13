@@ -73,6 +73,10 @@ func (app *application) authTokenMiddleware(next http.Handler) http.Handler {
 
 		ctx := r.Context()
 		user, err := app.getUser(ctx, claims.UserID)
+		if err != nil {
+			app.unauthorizedErrorResponse(w, r, err)
+			return
+		}
 
 		ctx = context.WithValue(ctx, userCtxKey, user)
 
@@ -116,6 +120,9 @@ func (app *application) checkRolePrecedence(ctx context.Context, user *store.Use
 }
 
 func (app *application) getUser(ctx context.Context, userID int64) (*store.UserWithRole, error) {
+	if !app.config.redisCfg.enabled {
+		return app.store.Users.GetByIDWithRole(ctx, userID)
+	}
 
 	user, err := app.cacheStorage.Users.Get(ctx, userID)
 	if err != nil {
