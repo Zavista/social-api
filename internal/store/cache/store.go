@@ -7,7 +7,7 @@ import (
 	"github.com/zavista/social-api/internal/store"
 )
 
-type Storage struct {
+type CacheStorage struct {
 	Users interface {
 		Get(context.Context, int64) (*store.UserWithRole, error)
 		Set(context.Context, *store.UserWithRole) error
@@ -15,8 +15,8 @@ type Storage struct {
 	}
 }
 
-func NewRedisStorage(rbd *redis.Client) Storage {
-	return Storage{
+func NewRedisStorage(rbd *redis.Client) CacheStorage {
+	return CacheStorage{
 		Users: &UserStore{rdb: rbd},
 	}
 }

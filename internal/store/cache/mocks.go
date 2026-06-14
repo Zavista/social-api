@@ -7,8 +7,8 @@ import (
 	"github.com/zavista/social-api/internal/store"
 )
 
-func NewMockStore() Storage {
-	return Storage{
+func NewMockStore() CacheStorage {
+	return CacheStorage{
 		Users: &MockUserStore{},
 	}
 }

@@ -19,7 +19,7 @@ import (
 type application struct {
 	config        config
 	store         store.Storage
-	cacheStorage  cache.Storage
+	cacheStorage  cache.CacheStorage
 	logger        *slog.Logger
 	mailer        mailer.Client
 	authenticator auth.Authenticator
