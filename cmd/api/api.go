@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -134,11 +138,6 @@ func (app *application) run() error {
 	docs.SwaggerInfo.Host = app.config.apiURL
 	docs.SwaggerInfo.BasePath = "/v1"
 
-	app.logger.Info("starting server",
-		"addr", app.config.addr,
-		"env", app.config.env,
-	)
-
 	srv := http.Server{
 		Addr:              app.config.addr,
 		Handler:           app.mount(),
@@ -148,5 +147,34 @@ func (app *application) run() error {
 		IdleTimeout:       60 * time.Second,
 	}
 
-	return srv.ListenAndServe()
+	shutdownErr := make(chan error)
+
+	go func() {
+		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+		defer stop()
+
+		<-ctx.Done()
+
+		app.logger.Info("shutting down server", "signal", ctx.Err())
+
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		shutdownErr <- srv.Shutdown(shutdownCtx)
+	}()
+
+	app.logger.Info("starting server", "addr", app.config.addr, "env", app.config.env)
+
+	err := srv.ListenAndServe()
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+
+	// Wait for the shutdown goroutine to finish (or report its error)
+	if err := <-shutdownErr; err != nil {
+		return err
+	}
+
+	app.logger.Info("server stopped", "addr", app.config.addr)
+	return nil
 }
