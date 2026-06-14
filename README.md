@@ -115,6 +115,12 @@ with key architectural decisions outlined below.
   - Admins can update and delete any post
 - Ownership-based permissions enforced for post updates/deletes
 
+### Redis Caching (optional - environment flag)
+
+- Uses Redis to cache frequently accessed user profile data
+- Reduces database load and improves response latency
+- Cache-aside pattern used for profile reads
+
 ## Planned Improvements
 
 - Authorization
