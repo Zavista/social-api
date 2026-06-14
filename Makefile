@@ -1,5 +1,6 @@
 include .env
 MIGRATIONS_PATH = ./cmd/migrate/migrations
+VERSION := $(shell grep -m1 'const version' cmd/api/main.go | sed -E 's/.*"(.*)".*/\1/')
 
 .PHONY: migrate-create
 migration:
@@ -24,3 +25,21 @@ gen-docs:
 .PHONY: test
 test:
 	@go test ./... -v
+
+.PHONY: docker-build
+docker-build:
+	@docker build -t social-api:$(VERSION) -t social-api:latest .
+
+.PHONY: docker-run
+docker-run: docker-build
+	@docker run --rm -p 8080:8080 \
+		-e DB_ADDR=postgres://admin:adminpassword@host.docker.internal/socialnetwork?sslmode=disable \
+		-e REDIS_ENABLED=true \
+		-e REDIS_ADDR=host.docker.internal:6379 \
+		--name social-api \
+		social-api:latest
+
+.PHONY: docker-full
+docker-full:
+	@docker compose up -d db redis
+	@$(MAKE) docker-run

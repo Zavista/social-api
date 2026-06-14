@@ -1,0 +1,10 @@
+.git
+bin
+tmp
+.env
+.air.toml
+*.md
+.DS_Store
+.vscode
+.idea
+docker-compose.yaml
