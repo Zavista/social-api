@@ -16,6 +16,7 @@ import (
 	"github.com/zavista/social-api/docs"
 	"github.com/zavista/social-api/internal/auth"
 	"github.com/zavista/social-api/internal/mailer"
+	"github.com/zavista/social-api/internal/ratelimiter"
 	"github.com/zavista/social-api/internal/store"
 	"github.com/zavista/social-api/internal/store/cache"
 )
@@ -27,6 +28,7 @@ type application struct {
 	logger        *slog.Logger
 	mailer        mailer.Client
 	authenticator auth.Authenticator
+	rateLimiter   ratelimiter.Limiter
 }
 type config struct {
 	addr        string
@@ -37,6 +39,7 @@ type config struct {
 	mail        mailConfig
 	frontendURL string
 	auth        authConfig
+	rateLimiter ratelimiter.Config
 }
 
 type authConfig struct {
@@ -86,6 +89,9 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
+	if app.config.rateLimiter.Enabled {
+		r.Use(app.rateLimiterMiddleware)
+	}
 
 	r.Route("/v1", func(r chi.Router) {
 

@@ -11,6 +11,7 @@ import (
 	"github.com/zavista/social-api/internal/db"
 	"github.com/zavista/social-api/internal/env"
 	"github.com/zavista/social-api/internal/mailer"
+	"github.com/zavista/social-api/internal/ratelimiter"
 	"github.com/zavista/social-api/internal/store"
 	"github.com/zavista/social-api/internal/store/cache"
 )
@@ -78,6 +79,11 @@ func main() {
 				aud:    "gosocialnetwork",
 			},
 		},
+		rateLimiter: ratelimiter.Config{
+			RequestsPerTimeFrame: env.GetInt("RATELIMITER_REQUESTS_COUNT", 20),
+			TimeFrame:            time.Second * 5,
+			Enabled:              env.GetBool("RATE_LIMITER_ENABLED", true),
+		},
 	}
 
 	// Main Database
@@ -112,6 +118,8 @@ func main() {
 		cfg.auth.token.exp,
 	)
 
+	rateLimiter := ratelimiter.NewFixedWindowLimiter(cfg.rateLimiter.RequestsPerTimeFrame, cfg.rateLimiter.TimeFrame)
+
 	app := &application{
 		config:        cfg,
 		store:         store,
@@ -119,6 +127,7 @@ func main() {
 		logger:        logger,
 		mailer:        mailer,
 		authenticator: authenticator,
+		rateLimiter:   rateLimiter,
 	}
 
 	if err := app.run(); err != nil {
