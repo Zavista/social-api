@@ -1,7 +1,8 @@
 # Social API (Go)
 
-A social media backend API built in Go to practice backend system design,
-with key architectural decisions outlined below.
+A social media backend API built in Go.
+
+For a breakdown of architectural decisions ([ARCHITECTURE.md](ARCHITECTURE.md)).
 
 ---
 
@@ -9,121 +10,71 @@ with key architectural decisions outlined below.
 
 - Users, Posts, Comments
 - Follow / Unfollow
-- Personalized Feed
+- Personalized feed with pagination, search, and tag filtering
+- JWT authentication + role-based authorization (user / moderator / admin)
+- Redis caching (cache-aside, toggleable via env flag)
+- Fixed-window rate limiting with `Retry-After`
+- CORS
+- Graceful shutdown
+- Structured logging (`slog`)
+- Runtime metrics via `expvar`
+- Swagger/OpenAPI docs
+
+## Tech Stack
+
+- Go + [chi](https://github.com/go-chi/chi) router
+- PostgreSQL (raw SQL via `lib/pq`)
+- Redis (`go-redis/v8`)
+- JWT (`golang-jwt/jwt/v5`)
+- SendGrid for transactional email
+- `swaggo` for API docs
+- `testify` for tests
 
 ---
 
-## Design Highlights
+## Getting Started
 
-### Chi Router
+### 1. Start dependencies
 
-- Uses chi router for lightweight routing
-- Route grouping and middleware support
-- Clean, modular endpoint structure
+```bash
+docker-compose up -d
+```
 
----
+Starts Postgres, Redis, and Redis Commander (UI at `http://localhost:8081`).
 
-### Application Struct Pattern
+### 2. Configure environment
 
-- Central `application` struct holds dependencies (store, config)
-- Handlers implemented as methods on `application`
-- Enables dependency injection and cleaner code organization
+Fill in `.env` as needed — defaults work for local dev with docker-compose.
+A few flags worth knowing:
 
----
+- `REDIS_ENABLED` — toggle Redis caching on/off
+- `RATE_LIMITER_ENABLED` / `RATELIMITER_REQUESTS_COUNT` — toggle/tune rate limiting
+- `FRONTEND_URL` — allowed CORS origin
 
-### Repository Layer
+### 3. Run migrations & seed data
 
-- Abstracted database logic behind interfaces
-- Separation: handlers → store → database
-- Easily extendable to other databases
+```bash
+make migrate-up
+make seed
+```
 
----
+### 4. Run the API
 
-### PostgreSQL Database
+```bash
+go run cmd/api/main.go
+# or, with live reload:
+air
+```
 
-- Uses raw SQL (no ORM)
-- Fine-grained control over queries and performance
-- Relational schema models relationships between users, posts, and comments
-- Optimized with indexes and joins (e.g. indexed `username` for efficient user queries)
-
----
-
-### Optimistic Concurrency Control
-
-- `version` field on posts
-- Prevents overwriting updates during concurrent writes
+API docs: `http://localhost:8080/v1/swagger/index.html`
 
 ---
 
-### Feed Algorithm
+## Commands
 
-- Returns:
-  - User’s own posts
-  - Posts from followed users
-
-- Implemented via SQL joins on `followers`
-
----
-
-### Pagination & Filtering
-
-- Offset/limit pagination
-- Text search via `ILIKE`
-- Tag filtering with GIN indexes
-- Supports query filtering (e.g. /feed?limit=10&offset=20&search=golang&tags=backend,cloud)
-
----
-
-### Context & Timeouts
-
-- All DB operations use context timeouts
-- Prevents hanging queries and improves reliability
-
----
-
-### Swagger Docs
-
-- Interactive API docs available at `http://<API-URL>/v1/swagger/index.html`
-
----
-
-### Structured Logging
-
-- Logs are emitted in structured key-value format using Go’s standard `slog` package
-- Improves debugging and makes logs easier to search/filter in production
-
----
-
-### Registration Flow
-
-- Creates a user account and a matching `user_invitations` record
-- Uses a database transaction so user creation and invitation creation succeed or fail together
-- Sends an activation invite by email via Sendgrid
-
-### Authentication
-
-- Uses stateless JWT-based authentication for protected API routes
-- Access tokens are verified on each request, eliminating server-side session storage and improving horizontal
-  scalability for distributed services
-- Operational endpoints such as metrics use HTTP Basic Authentication for lightweight internal protection
-
-### Authorization
-
-- Role-based access control (RBAC) with users, moderators, and admins
-  - Users can modify their own posts
-  - Moderators can update any post
-  - Admins can update and delete any post
-- Ownership-based permissions enforced for post updates/deletes
-
-### Redis Caching (optional - environment flag)
-
-- Uses Redis to cache frequently accessed user profile data
-- Reduces database load and improves response latency
-- Cache-aside pattern used for profile reads
-
-## Planned Improvements
-
-- Authorization
-- Redis caching (feed, hot data)
-- Metrics & observability
-- Rate limiting
+| Command                                 | Description                        |
+| --------------------------------------- | ---------------------------------- |
+| `make test`                             | Run all tests (`go test ./... -v`) |
+| `make migrate-up` / `make migrate-down` | Run / rollback DB migrations       |
+| `make seed`                             | Seed the database with sample data |
+| `make gen-docs`                         | Regenerate Swagger docs            |
