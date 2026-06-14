@@ -1,8 +1,10 @@
 package main
 
 import (
+	"expvar"
 	"log/slog"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -129,6 +131,14 @@ func main() {
 		authenticator: authenticator,
 		rateLimiter:   rateLimiter,
 	}
+
+	expvar.NewString("version").Set(version)
+	expvar.Publish("database", expvar.Func(func() any {
+		return db.Stats()
+	}))
+	expvar.Publish("goroutines", expvar.Func(func() any {
+		return runtime.NumGoroutine()
+	}))
 
 	if err := app.run(); err != nil {
 		app.logger.Error("failed to start server",
