@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/zavista/social-api/internal/auth"
+	"github.com/zavista/social-api/internal/ratelimiter"
 	"github.com/zavista/social-api/internal/store"
 	"github.com/zavista/social-api/internal/store/cache"
 )
@@ -19,6 +20,7 @@ func newTestApplication(t *testing.T, cfg config) *application {
 		store:         store.NewMockStore(),
 		cacheStorage:  cache.NewMockStore(),
 		authenticator: &auth.TestAuthenticator{},
+		rateLimiter:   ratelimiter.NewFixedWindowLimiter(cfg.rateLimiter.RequestsPerTimeFrame, cfg.rateLimiter.TimeFrame),
 		config:        cfg,
 	}
 }
