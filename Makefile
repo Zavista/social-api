@@ -28,7 +28,7 @@ test:
 
 .PHONY: docker-build
 docker-build:
-	@docker build -t social-api:$(VERSION) -t social-api:latest .
+	@docker build -t social-api:$(VERSION) .
 
 .PHONY: docker-run
 docker-run: docker-build
@@ -37,9 +37,18 @@ docker-run: docker-build
 		-e REDIS_ENABLED=true \
 		-e REDIS_ADDR=host.docker.internal:6379 \
 		--name social-api \
-		social-api:latest
+		social-api:$(VERSION)
 
 .PHONY: docker-full
 docker-full:
 	@docker compose up -d db redis
 	@$(MAKE) docker-run
+
+.PHONY: ecr-push
+ecr-push: docker-build
+	@ECR_REPO_URL=$$(cd terraform && terraform output -raw ecr_repository_url) && \
+	ECR_REGISTRY=$${ECR_REPO_URL%%/*} && \
+	AWS_REGION=$$(aws configure get region) && \
+	aws ecr get-login-password --region $$AWS_REGION | docker login --username AWS --password-stdin $$ECR_REGISTRY && \
+	docker tag social-api:$(VERSION) $$ECR_REPO_URL:$(VERSION) && \
+	docker push $$ECR_REPO_URL:$(VERSION)
