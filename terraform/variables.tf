@@ -39,3 +39,33 @@ variable "desired_count" {
   type        = number
   default     = 1
 }
+
+variable "db_name" {
+  description = "Name of the application database"
+  type        = string
+  default     = "socialnetwork"
+}
+
+variable "db_username" {
+  description = "Master username for the RDS instance"
+  type        = string
+  default     = "social_api_admin"
+}
+
+variable "db_instance_class" {
+  description = "RDS instance size (db.t4g.micro is RDS free-tier eligible)"
+  type        = string
+  default     = "db.t4g.micro"
+}
+
+variable "db_allocated_storage" {
+  description = "Allocated storage for RDS, in GB"
+  type        = number
+  default     = 20
+}
+
+variable "db_engine_version" {
+  description = "Postgres engine version"
+  type        = string
+  default     = "16.4"
+}

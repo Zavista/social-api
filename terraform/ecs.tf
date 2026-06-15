@@ -53,6 +53,12 @@ resource "aws_ecs_task_definition" "api" {
           value = aws_lb.this.dns_name
         }
       ]
+      secrets = [
+        {
+          name      = "DB_ADDR"
+          valueFrom = aws_ssm_parameter.db_addr.arn
+        }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {

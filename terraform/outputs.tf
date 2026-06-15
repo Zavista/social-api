@@ -7,3 +7,8 @@ output "alb_dns_name" {
   description = "Public URL of the API (via the ALB)"
   value       = "http://${aws_lb.this.dns_name}"
 }
+
+output "rds_endpoint" {
+  description = "RDS connection endpoint (host:port) - for running migrations"
+  value       = aws_db_instance.this.endpoint
+}
