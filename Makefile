@@ -28,7 +28,7 @@ test:
 
 .PHONY: docker-build
 docker-build:
-	@docker build -t social-api:$(VERSION) .
+	@docker build --platform=linux/amd64 -t social-api:$(VERSION) .
 
 .PHONY: docker-run
 docker-run: docker-build

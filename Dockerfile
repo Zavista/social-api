@@ -1,5 +1,7 @@
 
-FROM golang:1.25-alpine AS build
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS build
+
+ARG TARGETARCH
 
 WORKDIR /app
 
@@ -9,10 +11,10 @@ RUN go mod download
 COPY . .
 
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /bin/api ./cmd/api
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go build -o /bin/api ./cmd/api
 
 
-FROM alpine:3.21
+FROM --platform=$TARGETPLATFORM alpine:3.21
 
 # ca-certificates: needed for outbound HTTPS (SendGrid, RDS TLS, etc.)
 RUN apk add --no-cache ca-certificates
